@@ -1,4 +1,4 @@
-#!/usr/bin/env pwsh
+﻿#!/usr/bin/env pwsh
 <#
 ===============================================================================
  TrackMeet 部署冒烟验收脚本（Windows PowerShell 5.1+ / PowerShell 7+）

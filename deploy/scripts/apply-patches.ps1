@@ -1,4 +1,4 @@
-#!/usr/bin/env pwsh
+﻿#!/usr/bin/env pwsh
 <#
 ===============================================================================
  TrackMeet 增量补丁执行脚本（Windows PowerShell 5.1+ / PowerShell 7+）

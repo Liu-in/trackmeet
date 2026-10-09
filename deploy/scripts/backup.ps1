@@ -1,4 +1,4 @@
-#!/usr/bin/env pwsh
+﻿#!/usr/bin/env pwsh
 <#
 ===============================================================================
  TrackMeet 数据库逻辑备份脚本（Windows PowerShell 5.1+ / PowerShell 7+）

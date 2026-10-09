@@ -1,0 +1,20 @@
+# 统一换行符策略：保证 Windows 批处理始终为 CRLF（cmd 只认 CRLF），
+# 而 Linux 脚本与 SQL 保持 LF，避免在 CI / 容器 / 目标机之间出现换行符导致的问题。
+* text=auto
+
+*.cmd text eol=crlf
+*.bat text eol=crlf
+*.ps1 text eol=crlf
+*.psm1 text eol=crlf
+*.sh  text eol=lf
+*.sql text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+
+*.jar  binary
+*.ico  binary
+*.png  binary
+*.jpg  binary
+*.zip  binary
+*.gz   binary
+*.exe  binary

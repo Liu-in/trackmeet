@@ -1,9 +1,9 @@
 @echo off
-rem ============================================================================
-rem TrackMeet 后端启动脚本（安装包使用）
-rem   工作目录固定为安装根目录，配置读取 config\application-prod.yml
-rem   日志输出到 logs\backend.out.log 与 logs\trackmeet.log
-rem ============================================================================
+rem ===========================================================================
+rem  TrackMeet backend start script (used by the installed application)
+rem  Working directory is the install root; config is read from config\.
+rem  Logs: logs\backend.out.log and logs\trackmeet.log
+rem ===========================================================================
 setlocal
 cd /d "%~dp0.."
 set "APPDIR=%CD%"

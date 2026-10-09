@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     TrackMeet Windows 安装包（EXE）一键构建脚本。
 
