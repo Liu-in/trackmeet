@@ -117,6 +117,23 @@ if ([string]::IsNullOrWhiteSpace($token)) { Stop2 '令牌不能为空。' }
 $token = $token.Trim()
 if ($token.Length -lt 20) { Warn '令牌看起来偏短，若有问题请重新生成一个再试。' }
 
+# 立即校验令牌（与浏览器同样走系统代理，因此浏览器能上就能校验）
+$tokenOk = $false
+try {
+    $api = Invoke-RestMethod -Uri 'https://api.github.com/user' -Headers @{ Authorization = "Bearer $token"; 'User-Agent' = 'TrackMeet' } -TimeoutSec 25
+    if ($api.login) {
+        if ($api.login -ne $user) { Warn "该令牌属于账号 $($api.login)，与你输入的 $user 不一致，请核对用户名。" }
+        Ok "令牌有效，已认证为：$($api.login)"
+        $tokenOk = $true
+    }
+} catch {
+    Warn "令牌校验未通过：$($_.Exception.Message)"
+    Info '请重新生成令牌后重试。建议使用「经典令牌 Classic」：'
+    Info '  GitHub → 右上头像 → Settings → Developer settings → Personal access tokens → Tokens (classic)'
+    Info '  → Generate new token (classic) → 勾选 repo → 生成后立即复制（页面只显示一次）'
+    if ((Read-Host '  仍要继续尝试上传吗？(y/N)') -notmatch '^[Yy]') { Stop2 '已取消（建议先重新生成令牌）。' }
+}
+
 $remoteUrl = "$Github/$user/$repo.git"
 $pushUrl = "https://$user`:$token@github.com/$user/$repo.git"
 Info "将上传到：$remoteUrl"
@@ -198,7 +215,7 @@ try {
     }
 
     Info '正在上传（第一次较慢，请耐心等待）...'
-    $code = Invoke-Git @('push','-u','origin','main','--force')
+    $code = Invoke-Git @('-c','credential.helper=','push','-u','origin','main','--force')
 
     if ($code -ne 0) {
         Warn '第一次上传失败，准备用代理重试。'
@@ -209,7 +226,7 @@ try {
             Invoke-Git @('config','--global','http.proxy',$proxy) | Out-Null
             Invoke-Git @('config','--global','https.proxy',$proxy) | Out-Null
             Info "已设置 git 代理：$proxy，正在重试上传..."
-            $code = Invoke-Git @('push','-u','origin','main','--force')
+            $code = Invoke-Git @('-c','credential.helper=','push','-u','origin','main','--force')
         }
     }
     if ($code -ne 0) {
