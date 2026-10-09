@@ -16,7 +16,7 @@ import java.util.List;
  * @author TrackMeet
  */
 @Data
-public class LaneSheetRowVO implements Serializable {
+public class LaneSheetRowVO implements RowConvertible, Serializable {
 
     private static final long serialVersionUID = 1L;
 

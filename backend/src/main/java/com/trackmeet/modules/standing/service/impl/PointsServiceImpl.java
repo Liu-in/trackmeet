@@ -25,7 +25,7 @@ import java.util.List;
  */
 @Service
 @RequiredArgsConstructor
-public class PointsServiceImpl extends ServiceImpl<StandingMapper, Points> implements PointsService {
+public class PointsServiceImpl implements PointsService {
 
     /** 每页条数上限（与单页最大导出量保持一致） */
     private static final long MAX_PAGE_SIZE = 200L;

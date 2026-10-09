@@ -55,7 +55,7 @@ import java.util.regex.Pattern;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class CertificateServiceImpl extends ServiceImpl<StandingMapper, Certificate> implements CertificateService {
+public class CertificateServiceImpl implements CertificateService {
 
     /** 录取名次默认值（获奖证书） */
     private static final int DEFAULT_ADMIT_RANK = 8;

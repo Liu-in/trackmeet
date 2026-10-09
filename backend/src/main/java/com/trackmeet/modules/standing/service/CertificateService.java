@@ -15,7 +15,7 @@ import java.util.List;
  *
  * @author TrackMeet
  */
-public interface CertificateService extends IService<Certificate> {
+public interface CertificateService {
 
     /**
      * 按成绩 / 名次批量生成证书。

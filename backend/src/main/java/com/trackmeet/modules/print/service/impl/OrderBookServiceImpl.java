@@ -1,5 +1,7 @@
 package com.trackmeet.modules.print.service.impl;
 
+import com.trackmeet.modules.print.vo.RowConvertible;
+
 import com.alibaba.excel.EasyExcel;
 import com.alibaba.excel.ExcelWriter;
 import com.alibaba.excel.write.metadata.WriteSheet;
@@ -983,15 +985,6 @@ public class OrderBookServiceImpl implements OrderBookService {
     /**
      * 行对象统一转字符串行的约定（与 {@code vo/*SheetRowVO#toRow()} 对应）。
      */
-    private interface RowConvertible {
-
-        /**
-         * 转为与表头一一对应的字符串行。
-         *
-         * @return 字符串行
-         */
-        List<String> toRow();
-    }
 
     /**
      * 装配上下文：届次信息 + 全部内存索引 + 出表口径，避免 N+1。

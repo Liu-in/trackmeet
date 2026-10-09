@@ -228,7 +228,7 @@ public class ConflictsServiceImpl extends ServiceImpl<ConflictLogMapper, Conflic
                 .isNotNull(Schedule::getPlanEndTime)
                 .orderByAsc(Schedule::getPlanStartTime)
                 .orderByAsc(Schedule::getId);
-        return list(wrapper);
+        return scheduleMapper.selectList(wrapper);
     }
 
     private Map<Long, Long> heatIdsBySchedule(Long meetId, Set<Long> scheduleIds) {

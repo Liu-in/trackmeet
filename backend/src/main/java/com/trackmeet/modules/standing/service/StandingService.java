@@ -20,7 +20,7 @@ import java.util.List;
  *
  * @author TrackMeet
  */
-public interface StandingService extends IService<TeamScore> {
+public interface StandingService {
 
     /**
      * 团体总分歧（读 {@code team_score} 快照；快照为空时实时计算并落库）。

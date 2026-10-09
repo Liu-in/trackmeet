@@ -17,7 +17,7 @@ import java.util.List;
  *
  * @author TrackMeet
  */
-public interface PointsService extends IService<Points> {
+public interface PointsService {
 
     /**
      * 积分明细分页查询（积分下钻）。

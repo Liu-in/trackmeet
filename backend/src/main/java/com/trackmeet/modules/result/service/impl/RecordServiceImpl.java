@@ -69,7 +69,7 @@ public class RecordServiceImpl extends ServiceImpl<RecordMapper, Record> impleme
             throw new BizException(ResultCode.FORBIDDEN, "无权查询其他届次的数据");
         }
         Page<RecordVO> pageParam = new Page<>(condition.pageNo(), condition.pageSize());
-        Page<RecordVO> result = recordMapper.selectRecordPage(pageParam, meetId,
+        IPage<RecordVO> result = recordMapper.selectRecordPage(pageParam, meetId,
                 condition.getEventId(), condition.getGroupId(), condition.getGroupCode(),
                 condition.getRecordType(), condition.getGender(), condition.getIsRelay(),
                 condition.getIsCurrent(), condition.getKeyword());

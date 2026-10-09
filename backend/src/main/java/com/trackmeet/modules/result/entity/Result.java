@@ -125,6 +125,9 @@ public class Result extends BaseEntity {
 
     /** 道次号，田赛与长跑可为空 */
     @TableField("lane_no")
+    @TableField(exist = false)
+    private Integer heatNo;
+
     private Integer laneNo;
 
     /** 成绩原文（显示用），如 11"23、1:02.45 */

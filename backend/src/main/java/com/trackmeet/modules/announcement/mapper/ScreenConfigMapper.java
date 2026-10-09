@@ -5,6 +5,7 @@ import com.trackmeet.modules.announcement.dto.ScreenMedalRow;
 import com.trackmeet.modules.announcement.dto.ScreenResultRow;
 import com.trackmeet.modules.announcement.dto.ScreenTeamScoreRow;
 import com.trackmeet.modules.announcement.entity.ScreenConfig;
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
@@ -34,7 +35,7 @@ import java.util.List;
  * @author TrackMeet
  */
 @Mapper
-public interface ScreenConfigMapper {
+public interface ScreenConfigMapper extends BaseMapper<ScreenConfig> {
 
     /**
      * 读取某届次的活动大屏配置（默认方案优先，其次主键最小）。

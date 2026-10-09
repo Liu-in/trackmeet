@@ -77,7 +77,7 @@ import java.util.Set;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class StandingServiceImpl extends ServiceImpl<StandingMapper, TeamScore> implements StandingService {
+public class StandingServiceImpl implements StandingService {
 
     /** 计算批次号时间格式 */
     private static final DateTimeFormatter BATCH_FORMAT = DateTimeFormatter.ofPattern("yyyyMMddHHmmssSSS");

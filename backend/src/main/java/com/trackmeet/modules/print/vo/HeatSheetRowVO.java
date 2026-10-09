@@ -17,7 +17,7 @@ import java.util.List;
  * @author TrackMeet
  */
 @Data
-public class HeatSheetRowVO implements Serializable {
+public class HeatSheetRowVO implements RowConvertible, Serializable {
 
     private static final long serialVersionUID = 1L;
 

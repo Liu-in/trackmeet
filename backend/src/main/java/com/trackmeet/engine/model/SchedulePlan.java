@@ -29,6 +29,9 @@ public class SchedulePlan implements Serializable {
     /** 冲突清单（排定结果的冲突检测结果） */
     private List<ConflictItem> conflicts = new ArrayList<>();
 
+    /** 编排批次号（同一次生成共享，便于回滚） */
+    private String batchNo;
+
     /** 已排条目数 */
     private int scheduledCount;
 

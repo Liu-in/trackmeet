@@ -184,7 +184,7 @@ public class PdfFontProvider {
                 return null;
             }
             return BaseFont.createFont(candidate, BaseFont.IDENTITY_H, BaseFont.EMBEDDED);
-        } catch (DocumentException | IOException | RuntimeException ex) {
+        } catch (IOException | RuntimeException ex) {
             log.debug("字体候选不可用：{}（{}）", candidate, ex.getMessage());
             return null;
         }

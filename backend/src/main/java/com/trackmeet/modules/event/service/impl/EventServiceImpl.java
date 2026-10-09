@@ -1,5 +1,7 @@
 package com.trackmeet.modules.event.service.impl;
 
+import com.trackmeet.modules.event.mapper.EventRoundMapper;
+
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -74,6 +76,7 @@ public class EventServiceImpl extends ServiceImpl<EventMapper, Event> implements
     private static final Map<String, EventTemplate> TEMPLATES = buildTemplates();
 
     private final MeetGroupMapper meetGroupMapper;
+    private final EventRoundMapper eventRoundMapper;
     private final EventRoundService eventRoundService;
     private final EventRuleService eventRuleService;
     private final MeetRuleConfigService meetRuleConfigService;
@@ -208,7 +211,7 @@ public class EventServiceImpl extends ServiceImpl<EventMapper, Event> implements
         }
         // 通过引用校验后，级联清理项目级规则与轮次级规则（均为物理删除，避免残留孤儿规则）
         baseMapper.deleteRuleConfigPhysically(event.getMeetId(), id);
-        baseMapper.deleteRoundRuleByEvent(event.getMeetId(), id);
+        eventRoundMapper.deleteRoundRuleByEvent(event.getMeetId(), id);
         // 逻辑删除前改写 event_code 释放届次内唯一键（uk_event_meet_code），项目编码可在后续复用
         Event patch = new Event();
         patch.setId(id);

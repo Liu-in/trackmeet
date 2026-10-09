@@ -74,6 +74,7 @@ public class HeatsServiceImpl extends ServiceImpl<HeatMapper, Heat> implements H
     private final HeatDraftBuilder heatDraftBuilder;
     private final HeatWriter heatWriter;
     private final HeatMapper heatMapper;
+    private final HeatMemberMapper heatMemberMapper;
     private final LaneMapper laneMapper;
     private final FieldOrderMapper fieldOrderMapper;
 
@@ -172,14 +173,14 @@ public class HeatsServiceImpl extends ServiceImpl<HeatMapper, Heat> implements H
         HeatMember existing = current.stream()
                 .filter(member -> Objects.equals(member.getRegistrationId(), dto.getRegistrationId()))
                 .findFirst()
-                .map(member -> this.baseMapper.selectById(member.getId()))
+                .map(member -> this.heatMemberMapper.selectById(member.getId()))
                 .orElse(null);
         if (existing != null) {
             // 幂等：已存在则仅调整顺序号
             HeatMember patch = new HeatMember();
             patch.setId(existing.getId());
             patch.setOrderNo(dto.getOrderNo() == null ? existing.getOrderNo() : dto.getOrderNo());
-            baseMapper.updateById(patch);
+            heatMemberMapper.updateById(patch);
             resequence(heatId);
             refreshHeatStat(heatId);
             return existing.getId();
@@ -210,7 +211,7 @@ public class HeatsServiceImpl extends ServiceImpl<HeatMapper, Heat> implements H
         member.setSeedResultUnit(row.getSeedResultUnit());
         member.setIsLocked(HeatMember.UNLOCKED);
         member.setBatchNo(heat.getBatchNo());
-        baseMapper.insert(member);
+        heatMemberMapper.insert(member);
         resequence(heatId);
         refreshHeatStat(heatId);
         return member.getId();
@@ -224,7 +225,7 @@ public class HeatsServiceImpl extends ServiceImpl<HeatMapper, Heat> implements H
         laneMapper.deleteByHeatMemberPhysically(member.getId());
         fieldOrderMapper.deleteByHeatMemberPhysically(member.getId());
         // 物理删除组内人员：逻辑删除会残留 uk_hm_heat_order / uk_hm_heat_registration 唯一键占位行
-        baseMapper.deleteByIdPhysically(member.getId());
+        heatMemberMapper.deleteByIdPhysically(member.getId());
         resequence(heatId);
         refreshHeatStat(heatId);
     }
@@ -235,7 +236,7 @@ public class HeatsServiceImpl extends ServiceImpl<HeatMapper, Heat> implements H
         if (dto == null || dto.getMemberId() == null || dto.getTargetHeatId() == null) {
             throw new BizException(ResultCode.PARAM_ERROR, "成员与目标分组不能为空");
         }
-        HeatMember member = baseMapper.selectById(dto.getMemberId());
+        HeatMember member = heatMemberMapper.selectById(dto.getMemberId());
         if (member == null) {
             throw new BizException(ResultCode.NOT_FOUND, "组内人员不存在");
         }
@@ -250,14 +251,14 @@ public class HeatsServiceImpl extends ServiceImpl<HeatMapper, Heat> implements H
             return;
         }
         // 目标组已有该报名记录时不重复挂载
-        Long duplicated = baseMapper.selectCount(new LambdaQueryWrapper<HeatMember>()
+        Long duplicated = heatMemberMapper.selectCount(new LambdaQueryWrapper<HeatMember>()
                 .eq(HeatMember::getHeatId, dto.getTargetHeatId())
                 .eq(HeatMember::getRegistrationId, member.getRegistrationId()));
         if (duplicated != null && duplicated > 0) {
             throw new BizException(ResultCode.CONFLICT, "目标分组已包含该报名记录");
         }
         int targetOrderNo = dto.getTargetOrderNo() == null || dto.getTargetOrderNo() <= 0
-                ? countMembers(dto.getTargetHeatId()) + 1
+                ? (int) countMembers(dto.getTargetHeatId()) + 1
                 : dto.getTargetOrderNo();
         LambdaUpdateWrapper<HeatMember> wrapper = new LambdaUpdateWrapper<>();
         wrapper.eq(HeatMember::getId, member.getId())
@@ -265,7 +266,7 @@ public class HeatsServiceImpl extends ServiceImpl<HeatMapper, Heat> implements H
                 .set(HeatMember::getScheduleId, targetHeat.getScheduleId())
                 .set(HeatMember::getOrderNo, targetOrderNo)
                 .set(HeatMember::getLaneNo, null);
-        baseMapper.update(wrapper);
+        heatMemberMapper.update(wrapper);
         // 道次随换组失效，需重新分配
         laneMapper.deleteByHeatMemberPhysically(member.getId());
         resequence(member.getHeatId());
@@ -294,7 +295,7 @@ public class HeatsServiceImpl extends ServiceImpl<HeatMapper, Heat> implements H
     // ------------------------------------------------------------------
 
     private HeatMember getMember(Long heatId, Long memberId) {
-        HeatMember member = baseMapper.selectById(memberId);
+        HeatMember member = heatMemberMapper.selectById(memberId);
         if (member == null || !Objects.equals(member.getHeatId(), heatId)) {
             throw new BizException(ResultCode.NOT_FOUND, "组内人员不存在");
         }
@@ -303,7 +304,7 @@ public class HeatsServiceImpl extends ServiceImpl<HeatMapper, Heat> implements H
     }
 
     private long countMembers(Long heatId) {
-        Long count = baseMapper.selectCount(new LambdaQueryWrapper<HeatMember>().eq(HeatMember::getHeatId, heatId));
+        Long count = heatMemberMapper.selectCount(new LambdaQueryWrapper<HeatMember>().eq(HeatMember::getHeatId, heatId));
         return count == null ? 0L : count;
     }
 
@@ -314,7 +315,7 @@ public class HeatsServiceImpl extends ServiceImpl<HeatMapper, Heat> implements H
      * 再按目标顺序回写，避免直接把顺序号往前挪时撞唯一键。
      */
     private void resequence(Long heatId) {
-        List<HeatMember> members = baseMapper.selectList(new LambdaQueryWrapper<HeatMember>()
+        List<HeatMember> members = heatMemberMapper.selectList(new LambdaQueryWrapper<HeatMember>()
                 .eq(HeatMember::getHeatId, heatId));
         if (members.isEmpty()) {
             return;
@@ -325,7 +326,7 @@ public class HeatsServiceImpl extends ServiceImpl<HeatMapper, Heat> implements H
         OrderResequencer.resequence(members, HeatMember::getId, (id, orderNo) -> {
             LambdaUpdateWrapper<HeatMember> wrapper = new LambdaUpdateWrapper<>();
             wrapper.eq(HeatMember::getId, id).set(HeatMember::getOrderNo, orderNo);
-            baseMapper.update(wrapper);
+            heatMemberMapper.update(wrapper);
         });
     }
 
@@ -337,7 +338,7 @@ public class HeatsServiceImpl extends ServiceImpl<HeatMapper, Heat> implements H
         if (heat == null) {
             return;
         }
-        List<HeatMember> members = baseMapper.selectList(new LambdaQueryWrapper<HeatMember>()
+        List<HeatMember> members = heatMemberMapper.selectList(new LambdaQueryWrapper<HeatMember>()
                 .eq(HeatMember::getHeatId, heatId));
         Heat patch = new Heat();
         patch.setId(heatId);

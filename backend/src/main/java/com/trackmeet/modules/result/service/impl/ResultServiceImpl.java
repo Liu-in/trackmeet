@@ -136,7 +136,7 @@ public class ResultServiceImpl extends ServiceImpl<ResultMapper, Result> impleme
         ResultQuery condition = query == null ? new ResultQuery() : query;
         Long meetId = resolveMeetId(condition.getMeetId());
         Page<ResultVO> pageParam = new Page<>(condition.pageNo(), condition.pageSize());
-        Page<ResultVO> page = resultMapper.selectResultPage(pageParam, meetId,
+        IPage<ResultVO> page = resultMapper.selectResultPage(pageParam, meetId,
                 condition.getScheduleId(), condition.getEventId(), condition.getRoundId(), condition.getHeatId(),
                 condition.getUnitId(), condition.getGroupId(), condition.getAthleteId(),
                 condition.getAuditStatus(), condition.getStatus(), condition.getIsLocked(),

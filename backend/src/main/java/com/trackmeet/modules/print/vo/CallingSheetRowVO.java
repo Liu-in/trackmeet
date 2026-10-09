@@ -16,7 +16,7 @@ import java.util.List;
  * @author TrackMeet
  */
 @Data
-public class CallingSheetRowVO implements Serializable {
+public class CallingSheetRowVO implements RowConvertible, Serializable {
 
     private static final long serialVersionUID = 1L;
 

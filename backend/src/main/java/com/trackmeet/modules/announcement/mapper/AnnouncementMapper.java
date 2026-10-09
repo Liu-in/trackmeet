@@ -1,6 +1,7 @@
 package com.trackmeet.modules.announcement.mapper;
 
 import com.trackmeet.modules.announcement.dto.ScreenAnnouncementRow;
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
@@ -22,7 +23,7 @@ import java.util.List;
  * @author TrackMeet
  */
 @Mapper
-public interface AnnouncementMapper {
+public interface AnnouncementMapper extends BaseMapper<Announcement> {
 
     /**
      * 大屏公告投影：已发布（{@code PUBLISHED}）、推送大屏（{@code screen_show = 1}）
