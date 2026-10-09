@@ -3,6 +3,7 @@ package com.trackmeet.modules.result.mapper;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.trackmeet.modules.result.entity.Record;
+import com.trackmeet.modules.result.vo.RecordCandidateRowVO;
 import com.trackmeet.modules.result.vo.RecordVO;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
