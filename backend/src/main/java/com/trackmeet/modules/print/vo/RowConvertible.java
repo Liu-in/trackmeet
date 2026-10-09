@@ -1,4 +1,4 @@
-﻿package com.trackmeet.modules.print.vo;
+package com.trackmeet.modules.print.vo;
 
 import java.util.List;
 
