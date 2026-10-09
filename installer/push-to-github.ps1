@@ -44,6 +44,26 @@ function Invoke-Git {
     return $code
 }
 
+# 读取 Windows 系统代理（浏览器能上网但 git 连不上 443 时，多半需要它）
+function Get-SystemProxy {
+    $candidates = @()
+    try {
+        $reg = Get-ItemProperty 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings' -ErrorAction SilentlyContinue
+        if ($reg -and $reg.ProxyEnable -eq 1 -and $reg.ProxyServer) { $candidates += $reg.ProxyServer }
+    } catch { }
+    try {
+        $out = (netsh winhttp show proxy 2>$null | Out-String)
+        if ($out -match 'Proxy Server\(s\)\s*:\s*(\S+)') { $candidates += $Matches[1] }
+    } catch { }
+    foreach ($item in $candidates) {
+        $value = [string]$item
+        if ($value -match '=') { continue }
+        if ($value -notmatch '^https?://') { $value = 'http://' + $value }
+        return $value
+    }
+    return $null
+}
+
 Clear-Host
 Write-Host ''
 Write-Host ' ============================================================' -ForegroundColor White
@@ -167,8 +187,31 @@ try {
 
     Invoke-Git @('remote','remove','origin') | Out-Null
     Invoke-Git @('remote','add','origin',$pushUrl) | Out-Null
+    # 常见环境差异：浏览器能打开 GitHub，但 git 直连 443 失败 —— 说明需要走代理，这里自动识别并应用
+    $proxy = Get-SystemProxy
+    if ($proxy) {
+        Info "检测到系统代理：$proxy（已让 git 使用它）"
+        Invoke-Git @('config','--global','http.proxy',$proxy) | Out-Null
+        Invoke-Git @('config','--global','https.proxy',$proxy) | Out-Null
+    } else {
+        Warn '未检测到系统代理；若你的电脑需通过代理软件（Clash / v2ray 等）访问 GitHub，请先打开代理再重试。'
+    }
+
     Info '正在上传（第一次较慢，请耐心等待）...'
     $code = Invoke-Git @('push','-u','origin','main','--force')
+
+    if ($code -ne 0) {
+        Warn '第一次上传失败，准备用代理重试。'
+        Info '常见代理端口：Clash 7890 / v2rayN 10809 / SS 1080；不知道就直接回车跳过。'
+        $port = Read-Host '  请输入你的代理端口（直接回车跳过）'
+        if (-not [string]::IsNullOrWhiteSpace($port)) {
+            $proxy = 'http://127.0.0.1:' + $port.Trim()
+            Invoke-Git @('config','--global','http.proxy',$proxy) | Out-Null
+            Invoke-Git @('config','--global','https.proxy',$proxy) | Out-Null
+            Info "已设置 git 代理：$proxy，正在重试上传..."
+            $code = Invoke-Git @('push','-u','origin','main','--force')
+        }
+    }
     if ($code -ne 0) {
         Write-Host ''
         Warn '上传失败。常见原因与处理：'
