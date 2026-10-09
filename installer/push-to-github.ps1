@@ -166,7 +166,7 @@ try {
     if ($code -ne 0) { Warn '提交步骤提示无新变更，继续推送...' } else { Ok '已生成提交' }
 
     Invoke-Git @('remote','remove','origin') | Out-Null
-    Invoke-Git @('remote','add','origin',) | Out-Null
+    Invoke-Git @('remote','add','origin',$pushUrl) | Out-Null
     Info '正在上传（第一次较慢，请耐心等待）...'
     $code = Invoke-Git @('push','-u','origin','main','--force')
     if ($code -ne 0) {
@@ -180,7 +180,7 @@ try {
     }
     Ok '上传成功！'
 
-    Invoke-Git @('remote','set-url','origin',) | Out-Null
+    Invoke-Git @('remote','set-url','origin',$remoteUrl) | Out-Null
     Ok '已清除本地保存的令牌（更安全）'
 } finally {
     if ((Get-Location).Path -eq $Root) { Pop-Location }
