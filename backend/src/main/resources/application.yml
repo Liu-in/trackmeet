@@ -1,0 +1,78 @@
+server:
+  port: 8080
+  servlet:
+    encoding:
+      charset: UTF-8
+      force: true
+  tomcat:
+    uri-encoding: UTF-8
+    max-connections: 2000
+    threads:
+      max: 200
+      min-spare: 20
+
+spring:
+  application:
+    name: trackmeet-backend
+  profiles:
+    active: dev
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: GMT+8
+    default-property-inclusion: non_null
+  servlet:
+    multipart:
+      max-file-size: 20MB
+      max-request-size: 50MB
+  mvc:
+    throw-exception-if-no-handler-found: false
+
+mybatis-plus:
+  mapper-locations: classpath*:/mapper/**/*.xml
+  type-aliases-package: com.trackmeet.modules
+  configuration:
+    map-underscore-to-camel-case: true
+    cache-enabled: false
+  global-config:
+    banner: false
+    db-config:
+      id-type: auto
+      logic-delete-field: deleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+      table-underline: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: never
+
+trackmeet:
+  jwt:
+    # 生产环境务必通过环境变量 TRACKMEET_JWT_SECRET 覆盖（长度 >= 32 字节）
+    secret: trackmeet-jwt-secret-key-please-change-in-production-2024
+    header: Authorization
+    prefix: "Bearer "
+    access-token-expire-minutes: 120
+    refresh-token-expire-minutes: 10080
+    issuer: trackmeet
+  captcha:
+    enabled: false
+    expire-seconds: 180
+  cors:
+    allowed-origins: "*"
+  default-password: Admin@123
+  # PDF 导出：中文字体文件路径（.ttf 或 .ttc，.ttc 可写 xxx.ttc,0）
+  # 留空则按「Windows simhei/simkai → Linux DroidSansFallback/文泉驿/Noto CJK → classpath:fonts/*.ttf」自动发现；
+  # Docker 镜像已内置 /usr/share/fonts/truetype/droid/DroidSansFallbackFull.ttf，可直接生成中文 PDF。
+  pdf:
+    font-path: ''
+
+logging:
+  level:
+    root: info
+    com.trackmeet: info

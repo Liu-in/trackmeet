@@ -1,0 +1,62 @@
+# ============================================================================
+# 集成测试 profile（@ActiveProfiles("test")）专属配置
+#
+# 数据源指向独立测试库 trackmeet_test，可用环境变量覆盖账号口令：
+#   TEST_DB_USERNAME / TEST_DB_PASSWORD
+# 也可覆盖 URL（如需自定义端口/库名）：TEST_DB_URL
+#
+# 数据由外部脚本准备（sql/01..06），因此 spring.sql.init.mode=never；
+# 数据库不可用时上下文仍可启动，测试通过 JUnit Assumptions 整体跳过，
+# 详见 com.trackmeet.api.support.ApiTestBase 与 src/test/resources/README-测试说明.md。
+# ============================================================================
+
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: "${TEST_DB_URL:jdbc:mysql://127.0.0.1:3306/trackmeet_test?useUnicode=true&characterEncoding=utf8&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai}"
+    username: "${TEST_DB_USERNAME:trackmeet}"
+    password: "${TEST_DB_PASSWORD:trackmeet@123}"
+    hikari:
+      pool-name: TrackMeetTestHikariPool
+      maximum-pool-size: 8
+      minimum-idle: 0
+      # 无库时快速失败：ApiTestBase 首次探测即返回，用例整体 SKIP
+      connection-timeout: 1000
+      validation-timeout: 1000
+      idle-timeout: 60000
+      max-lifetime: 600000
+      # 关键：数据库不可用时不要导致上下文启动失败，
+      # 让测试以 Assumptions 跳过（否则会因连接不上而 ERROR 而非 SKIP）
+      initialization-fail-timeout: -1
+  # 测试库由外部脚本准备，禁止 Spring 执行 schema.sql / data.sql
+  sql:
+    init:
+      mode: never
+  main:
+    banner-mode: off
+
+mybatis-plus:
+  configuration:
+    # 降噪：测试期间不打印 SQL
+    log-impl: org.apache.ibatis.logging.nologging.NoLoggingImpl
+
+trackmeet:
+  # 集成测试必须关闭验证码，登录接口才可脚本化调用
+  captcha:
+    enabled: false
+
+logging:
+  level:
+    root: warn
+    com.trackmeet: info
+    org.springframework: warn
+    org.springframework.boot: warn
+    org.springframework.security: warn
+    org.springframework.test: warn
+    org.mybatis: warn
+    com.baomidou: warn
+    com.zaxxer.hikari: error
+    org.apache: error
+    com.alibaba: error
+  pattern:
+    console: "%d{HH:mm:ss.SSS} %-5level %logger{36} - %msg%n"

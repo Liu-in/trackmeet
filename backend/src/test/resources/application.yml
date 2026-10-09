@@ -1,0 +1,84 @@
+# ============================================================================
+# 集成测试基础配置（test classpath 优先，覆盖 src/main/resources/application.yml）
+#
+# 为什么需要本文件：
+#   主配置 application.yml 中写有 spring.profiles.active: dev，而 dev profile 会
+#   配置指向开发库的数据源。测试必须只连 trackmeet_test，因此本文件位于
+#   src/test/resources（Maven 中 target/test-classes 先于 target/classes 出现在
+#   测试 classpath 上），从而“遮蔽”主配置，确保 dev profile 不会被激活。
+#
+#   测试专属覆盖项（数据源、关闭验证码、日志降噪等）统一放在
+#   application-test.yml，由基类上的 @ActiveProfiles("test") 激活。
+# ============================================================================
+
+server:
+  port: 0
+  servlet:
+    encoding:
+      charset: UTF-8
+      force: true
+  tomcat:
+    uri-encoding: UTF-8
+    max-connections: 2000
+    threads:
+      max: 200
+      min-spare: 20
+
+spring:
+  application:
+    name: trackmeet-backend
+  # 兜底：即使 @ActiveProfiles 未生效，也保证 test profile 被激活
+  profiles:
+    active: test
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: GMT+8
+    default-property-inclusion: non_null
+  servlet:
+    multipart:
+      max-file-size: 20MB
+      max-request-size: 50MB
+  mvc:
+    throw-exception-if-no-handler-found: false
+
+mybatis-plus:
+  mapper-locations: classpath*:/mapper/**/*.xml
+  type-aliases-package: com.trackmeet.modules
+  configuration:
+    map-underscore-to-camel-case: true
+    cache-enabled: false
+  global-config:
+    banner: false
+    db-config:
+      id-type: auto
+      logic-delete-field: deleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+      table-underline: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: never
+
+trackmeet:
+  jwt:
+    # 测试专用密钥（长度需 >= 32 字节），与生产配置无关
+    secret: trackmeet-jwt-secret-key-for-integration-tests-only-2024
+    header: Authorization
+    prefix: "Bearer "
+    access-token-expire-minutes: 120
+    refresh-token-expire-minutes: 10080
+    issuer: trackmeet
+  captcha:
+    enabled: false
+    expire-seconds: 180
+  cors:
+    allowed-origins: "*"
+  default-password: Admin@123
+  pdf:
+    font-path: ''

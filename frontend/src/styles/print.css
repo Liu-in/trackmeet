@@ -1,0 +1,197 @@
+/**
+ * TrackMeet 打印与 A4 适配公共样式
+ * 用法：在页面 <script setup lang="ts"> 顶部 `import '@/styles/print.css'`
+ * 约定：
+ *   .tm-print-page        一页 A4（屏幕预览显示纸张阴影，打印时不换页）
+ *   .tm-print-header      页眉（届次 + 标题 + 信息行）
+ *   .tm-print-title       标题
+ *   .tm-print-subtitle    副标题
+ *   .tm-print-meta        信息行
+ *   .tm-print-section     一节（标题 + 表格 + 备注），打印时避免跨页断裂
+ *   .tm-print-table       报表表格（细边框、表头浅底、斑马纹）
+ *   .tm-print-note        备注
+ *   .tm-print-signature   签名区（左中右三栏）
+ *   .no-print             打印时隐藏（筛选栏、按钮、分页等）
+ */
+
+/* ---------------- 屏幕预览 ---------------- */
+.tm-print-page {
+  background: #fff;
+  width: 210mm;
+  min-height: 297mm;
+  margin: 0 auto 16px;
+  padding: 14mm 12mm;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.12);
+  box-sizing: border-box;
+  color: #1f2329;
+  font-size: 12px;
+}
+
+.tm-print-page--landscape {
+  width: 297mm;
+  min-height: 210mm;
+}
+
+.tm-print-header {
+  text-align: center;
+  border-bottom: 1.5px solid #1f2329;
+  padding-bottom: 6px;
+  margin-bottom: 10px;
+}
+
+.tm-print-title {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  margin: 0 0 4px;
+}
+
+.tm-print-subtitle {
+  font-size: 14px;
+  margin: 0 0 4px;
+}
+
+.tm-print-meta {
+  font-size: 11px;
+  color: #5a6069;
+  line-height: 1.7;
+}
+
+.tm-print-section {
+  margin-bottom: 12px;
+  break-inside: avoid;
+}
+
+.tm-print-section-title {
+  font-size: 13px;
+  font-weight: 700;
+  margin: 6px 0 4px;
+}
+
+.tm-print-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.tm-print-table th,
+.tm-print-table td {
+  border: 0.5px solid #969ca5;
+  padding: 3px 5px;
+  font-size: 11px;
+  line-height: 1.5;
+  word-break: break-all;
+}
+
+.tm-print-table th {
+  background: #eef2f7;
+  font-weight: 700;
+  text-align: center;
+}
+
+.tm-print-table td {
+  text-align: left;
+}
+
+.tm-print-table td.tm-center,
+.tm-print-table th.tm-center {
+  text-align: center;
+}
+
+.tm-print-table tbody tr:nth-child(even) td {
+  background: #fafbfc;
+}
+
+.tm-print-note {
+  font-size: 10px;
+  color: #5a6069;
+  margin-top: 3px;
+}
+
+.tm-print-signature {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 22px;
+  font-size: 11px;
+}
+
+.tm-print-footer {
+  margin-top: 8px;
+  font-size: 10px;
+  color: #5a6069;
+  display: flex;
+  justify-content: space-between;
+}
+
+.tm-print-empty {
+  padding: 24px 0;
+  text-align: center;
+  color: #909399;
+}
+
+/* ---------------- 打印（A4 + 另存为 PDF） ---------------- */
+@page {
+  size: A4 portrait;
+  margin: 12mm 10mm;
+}
+
+@page landscape {
+  size: A4 landscape;
+}
+
+@media print {
+  html,
+  body {
+    background: #fff !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .no-print,
+  .tm-no-print,
+  .el-pagination,
+  .el-message,
+  .el-notification,
+  .el-drawer__header,
+  .el-dialog__header {
+    display: none !important;
+  }
+
+  .tm-print-page {
+    width: auto !important;
+    min-height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+  }
+
+  .tm-print-page + .tm-print-page {
+    page-break-before: always;
+  }
+
+  .tm-print-section,
+  .tm-print-signature {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .tm-print-table thead {
+    display: table-header-group;
+  }
+
+  .tm-print-table tr {
+    page-break-inside: avoid;
+  }
+
+  .el-card,
+  .el-card__body {
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+  }
+
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+}

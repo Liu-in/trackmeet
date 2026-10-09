@@ -1,0 +1,88 @@
+name: build-installer
+
+# 一键产出 Windows 安装包（TrackMeet-Setup-*.exe）与免安装绿色包。
+# 触发方式：推送 tag（v*）、手动触发，或对 main 的推送（仅构建不发布）。
+on:
+  push:
+    tags: ['v*']
+    branches: ['main']
+  workflow_dispatch:
+    inputs:
+      version:
+        description: '版本号（默认取 tag 或 P6）'
+        required: false
+        default: 'P6'
+
+permissions:
+  contents: read
+
+jobs:
+  windows-installer:
+    name: 构建 Windows 安装包
+    runs-on: windows-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 安装 JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+
+      - name: 安装 Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 安装 pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          # 必须与 frontend/pnpm-lock.yaml 的 lockfileVersion 9.0 匹配（pnpm 9/10），pnpm 8 无法读取该锁文件
+          version: 10
+
+      - name: 安装 Inno Setup 6
+        run: choco install innosetup --no-progress -y
+
+      - name: 解析版本号
+        id: version
+        shell: pwsh
+        run: |
+          $version = '${{ github.event.inputs.version }}'
+          if (-not $version) { $version = '${{ github.ref_name }}' }
+          if ($version -like 'v*') { $version = $version.Substring(1) }
+          if (-not $version -or $version -eq 'main') { $version = 'P6' }
+          "value=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+          Write-Host "构建版本：$version"
+
+      - name: 构建安装包
+        shell: pwsh
+        run: |
+          ./installer/build-installer.ps1 -Version "${{ steps.version.outputs.value }}"
+
+      - name: 构建免安装绿色包
+        shell: pwsh
+        run: |
+          ./installer/build-installer.ps1 -Version "${{ steps.version.outputs.value }}" -Portable
+
+      - name: 上传构建产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: trackmeet-windows-${{ steps.version.outputs.value }}
+          path: |
+            dist/TrackMeet-Setup-*.exe
+            dist/TrackMeet-Setup-*.exe.sha256
+            dist/TrackMeet-Portable-*.zip
+            dist/TrackMeet-Portable-*.zip.sha256
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: 生成构建摘要
+        shell: pwsh
+        run: |
+          Get-ChildItem dist -File | ForEach-Object {
+            "{0}  {1:N2} MB" -f $_.Name, ($_.Length / 1MB)
+          } | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8

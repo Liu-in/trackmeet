@@ -1,0 +1,37 @@
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: "jdbc:mysql://${DB_HOST:mysql}:${DB_PORT:3306}/${DB_NAME:trackmeet}?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true&rewriteBatchedStatements=true&allowMultiQueries=true"
+    username: ${DB_USERNAME:trackmeet}
+    password: ${DB_PASSWORD:trackmeet123}
+    hikari:
+      pool-name: TrackMeetHikariPool
+      minimum-idle: 10
+      maximum-pool-size: 50
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      connection-timeout: 30000
+      connection-test-query: SELECT 1
+
+mybatis-plus:
+  configuration:
+    log-impl: org.apache.ibatis.logging.nologging.NoLoggingImpl
+
+trackmeet:
+  jwt:
+    secret: ${TRACKMEET_JWT_SECRET:trackmeet-jwt-secret-key-please-change-in-production-2024}
+  cors:
+    allowed-origins: ${TRACKMEET_CORS:http://localhost,http://127.0.0.1}
+  # 新增账号初始口令（可用环境变量覆盖，避免明文写死）
+  default-password: ${TRACKMEET_DEFAULT_PASSWORD:Admin@123}
+  # PDF 中文字体：留空自动发现系统字体（容器内置 DroidSansFallback）
+  pdf:
+    font-path: ${PDF_FONT_PATH:}
+
+logging:
+  level:
+    # 可用 LOG_LEVEL / LOG_LEVEL_APP 环境变量调整
+    root: ${LOG_LEVEL:info}
+    com.trackmeet: ${LOG_LEVEL_APP:${LOG_LEVEL:info}}
+  file:
+    name: ${LOG_FILE:/app/logs/trackmeet.log}

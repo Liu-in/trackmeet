@@ -1,0 +1,221 @@
+/* ==========================================================================
+   全局样式：布局、卡片、表格、分页、打印友好
+   ========================================================================== */
+:root {
+  --tm-primary: #409eff;
+  --tm-bg: #f5f7fa;
+  --tm-border: #dcdfe6;
+  --tm-text: #303133;
+  --tm-text-secondary: #606266;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  font-family: 'Helvetica Neue', Helvetica, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', Arial, sans-serif;
+  font-size: 14px;
+  color: var(--tm-text);
+  background-color: var(--tm-bg);
+}
+
+/* 布局 */
+.tm-layout {
+  display: flex;
+  height: 100%;
+}
+
+.tm-aside {
+  width: 220px;
+  background-color: #304156;
+  overflow-y: auto;
+  transition: width 0.2s;
+}
+
+.tm-aside.is-collapsed {
+  width: 64px;
+}
+
+.tm-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.tm-header {
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  background-color: #fff;
+  border-bottom: 1px solid var(--tm-border);
+}
+
+.tm-header-left,
+.tm-header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.tm-tabs {
+  padding: 8px 16px 0;
+  background-color: #fff;
+  border-bottom: 1px solid var(--tm-border);
+}
+
+.tm-content {
+  flex: 1;
+  padding: 16px;
+  overflow: auto;
+}
+
+.tm-logo {
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 1px;
+}
+
+/* 页面通用 */
+.tm-page {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.tm-page-title {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.tm-page-desc {
+  color: var(--tm-text-secondary);
+  font-size: 12px;
+}
+
+.tm-search-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.tm-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.tm-toolbar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tm-pagination {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 12px;
+}
+
+.tm-card {
+  background-color: #fff;
+  border-radius: 4px;
+  padding: 16px;
+  box-shadow: 0 1px 4px rgba(0, 21, 41, 0.06);
+}
+
+.tm-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.tm-stat-card {
+  background-color: #fff;
+  border-radius: 4px;
+  padding: 16px;
+  box-shadow: 0 1px 4px rgba(0, 21, 41, 0.06);
+}
+
+.tm-stat-label {
+  color: var(--tm-text-secondary);
+  font-size: 13px;
+}
+
+.tm-stat-value {
+  font-size: 26px;
+  font-weight: 600;
+  margin-top: 6px;
+  color: var(--tm-primary);
+}
+
+.tm-form-tip {
+  color: #909399;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.tm-error-box {
+  max-height: 320px;
+  overflow: auto;
+}
+
+/* 登录页 */
+.tm-login {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #1f4e79 0%, #2f7ec0 100%);
+}
+
+.tm-login-card {
+  width: 400px;
+  padding: 32px;
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+}
+
+.tm-login-title {
+  text-align: center;
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.tm-login-sub {
+  text-align: center;
+  color: var(--tm-text-secondary);
+  font-size: 12px;
+  margin-bottom: 24px;
+}
+
+/* 打印友好 */
+@media print {
+  .tm-aside,
+  .tm-header,
+  .tm-tabs {
+    display: none !important;
+  }
+
+  .tm-content {
+    padding: 0;
+  }
+}

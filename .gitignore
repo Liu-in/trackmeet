@@ -1,0 +1,40 @@
+# ---- 构建产物 ----
+target/
+dist/
+build/
+*.jar
+*.war
+*.class
+
+# ---- IDE ----
+.idea/
+*.iml
+.vscode/
+*.swp
+.settings/
+.project
+.classpath
+
+# ---- 前端 ----
+node_modules/
+.pnpm-store/
+*.local
+frontend/dist/
+frontend/.vite/
+
+# ---- 运行与部署 ----
+logs/
+*.log
+deploy/.env
+deploy/backups/
+installer/stage/
+
+# ---- 系统 ----
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ---- 其他 ----
+*.tmp
+*.bak
+.attach/

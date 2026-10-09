@@ -1,0 +1,196 @@
+# ============================================================================
+# 田径运动会编排软件 TrackMeet —— Docker Compose 一键编排
+# ----------------------------------------------------------------------------
+# 用法：
+#   1) cd deploy && cp .env.example .env   然后按需修改（口令 / 端口 / 密钥）
+#   2) docker compose up -d --build
+#   3) docker compose ps                   等待三个服务均为 healthy
+#   4) 前端： http://<服务器IP>:${WEB_PORT:-80}
+#      后端： http://<服务器IP>:${BACKEND_PORT:-8080}/actuator/health
+#   5) 默认账号：admin / Admin@123（首登强制改密，见 deploy/README.md）
+#   6) 冒烟验收： bash scripts/smoke-test.sh
+#
+# 数据库初始化说明（重要）：
+#   /docker-entrypoint-initdb.d 只在 mysql-data 卷为空时执行，且按文件名字典序执行，
+#   因此首次启动会依次执行 ../sql/01..09。07/08/09 为增量补丁，已写成幂等脚本
+#   （INSERT ... WHERE NOT EXISTS / INSERT IGNORE / MODIFY COLUMN），
+#   在「全新环境」与「已有库手工执行」两种场景下重复执行均安全。
+#   注意：卷中已有数据时上述脚本一律不再执行，升级请用 scripts/apply-patches-*。
+# ============================================================================
+
+name: trackmeet
+
+services:
+  # --------------------------------------------------------------------------
+  # MySQL 8.0：业务库 + 首次启动自动初始化
+  # --------------------------------------------------------------------------
+  mysql:
+    image: mysql:8.0
+    container_name: trackmeet-mysql
+    restart: unless-stopped
+    # 字符集 / 排序规则 / 时区：与 mysql/conf.d/my.cnf 保持一致（双保险，便于单看本文件排障）
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_0900_ai_ci
+      - --default-time-zone=+08:00
+      - --lower-case-table-names=0
+      - --max-connections=500
+      - --max-allowed-packet=64M
+      # MySQL 8.0 专用；若将来升级镜像到 8.4+ 请改为 --authentication-policy=*
+      - --default-authentication-plugin=mysql_native_password
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?请在 deploy/.env 中设置 MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME:-trackmeet}
+      MYSQL_USER: ${DB_USERNAME:-trackmeet}
+      MYSQL_PASSWORD: ${DB_PASSWORD:?请在 deploy/.env 中设置 DB_PASSWORD}
+      TZ: ${TZ:-Asia/Shanghai}
+    ports:
+      # 仅本机使用建议改成 "127.0.0.1:${MYSQL_PORT:-3306}:3306"，避免数据库暴露到公网
+      - "${MYSQL_PORT:-3306}:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./mysql/conf.d:/etc/mysql/conf.d:ro
+      # 初始化脚本按文件名顺序执行：
+      #   01 系统层 → 02 届次基础+人员报名 → 03 项目规则+编排 → 04 成绩+统计输出
+      #   → 05 初始化数据 → 06 演示数据 → 07/08/09 增量补丁（幂等）
+      - ../sql:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      # 用 mysqladmin ping 判活；密码通过容器内 env 展开，不写进本文件
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u root -p\"$$MYSQL_ROOT_PASSWORD\" --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 60s
+    stop_grace_period: 60s
+    networks:
+      - trackmeet-net
+
+  # --------------------------------------------------------------------------
+  # 后端 Spring Boot 3（prod profile，容器内 8080）
+  # --------------------------------------------------------------------------
+  backend:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    image: trackmeet/backend:1.0.0
+    container_name: trackmeet-backend
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod}
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_NAME: ${DB_NAME:-trackmeet}
+      DB_USERNAME: ${DB_USERNAME:-trackmeet}
+      DB_PASSWORD: ${DB_PASSWORD:?请在 deploy/.env 中设置 DB_PASSWORD}
+      # JWT 密钥（>= 32 字节）与跨域白名单；同源部署时 CORS 可留默认值
+      TRACKMEET_JWT_SECRET: ${JWT_SECRET:?请在 deploy/.env 中设置 JWT_SECRET（长度 >= 32 字节）}
+      TRACKMEET_CORS: ${CORS_ORIGINS:-http://localhost,http://127.0.0.1}
+      # 首登默认口令（DefaultAccountInitializer 用它初始化 INIT_PLACEHOLDER 账号）
+      TRACKMEET_DEFAULT_PASSWORD: ${DEFAULT_ACCOUNT_PASSWORD:-Admin@123}
+      # 日志级别：后端 yml 未暴露 logging.level 占位符，故用 Spring 的 JSON 覆盖方式生效
+      SPRING_APPLICATION_JSON: '{"logging":{"level":{"root":"${LOG_LEVEL:-info}","com.trackmeet":"${LOG_LEVEL:-info}"}}}'
+      TZ: ${TZ:-Asia/Shanghai}
+    ports:
+      - "${BACKEND_PORT:-8080}:8080"
+    volumes:
+      - backend-logs:/app/logs
+    healthcheck:
+      # 运行镜像基于 eclipse-temurin:17-jre-jammy，不保证自带 curl/wget：
+      # 依次尝试 curl → wget → bash /dev/tcp 端口探测，任一通过即视为健康
+      test:
+        - CMD-SHELL
+        - >-
+          if command -v curl >/dev/null 2>&1; then
+            curl -fsS http://127.0.0.1:8080/actuator/health >/dev/null;
+          elif command -v wget >/dev/null 2>&1; then
+            wget -q -O /dev/null http://127.0.0.1:8080/actuator/health;
+          else
+            bash -c 'exec 3<>/dev/tcp/127.0.0.1/8080';
+          fi
+      interval: 15s
+      timeout: 5s
+      retries: 20
+      start_period: 90s
+    networks:
+      - trackmeet-net
+
+  # --------------------------------------------------------------------------
+  # 前端 Nginx（静态站点 + /api 反向代理，容器内 80）
+  # --------------------------------------------------------------------------
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+    image: trackmeet/frontend:1.0.0
+    container_name: trackmeet-frontend
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    environment:
+      TZ: ${TZ:-Asia/Shanghai}
+    ports:
+      # 80 被占用时改 .env 的 WEB_PORT（例如 8081），或用 WEB_BIND 限定监听地址
+      - "${WEB_BIND:-0.0.0.0}:${WEB_PORT:-80}:80"
+    volumes:
+      # 覆盖镜像内默认配置：SPA 回退 / /api 反代 / gzip / 安全响应头（见 nginx/default.conf）
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    healthcheck:
+      # nginx:alpine 自带 busybox wget
+      test: ["CMD-SHELL", "wget -q -O - http://127.0.0.1/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    networks:
+      - trackmeet-net
+
+  # --------------------------------------------------------------------------
+  # 可选排障工具：Adminer（数据库 Web 客户端）
+  #   默认不启动；需要时： docker compose --profile tools up -d adminer
+  #   访问： http://127.0.0.1:${ADMINER_PORT:-8082}/  （服务器/用户名/密码/数据库见 .env）
+  # --------------------------------------------------------------------------
+  adminer:
+    image: adminer:4
+    container_name: trackmeet-adminer
+    restart: unless-stopped
+    profiles: ["tools"]
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      ADMINER_DEFAULT_SERVER: mysql
+      ADMINER_DESIGN: nette
+      TZ: ${TZ:-Asia/Shanghai}
+    ports:
+      # 仅本机访问，避免数据库管理界面暴露到公网
+      - "127.0.0.1:${ADMINER_PORT:-8082}:8080"
+    networks:
+      - trackmeet-net
+
+volumes:
+  mysql-data:
+    name: trackmeet-mysql-data
+  backend-logs:
+    name: trackmeet-backend-logs
+
+networks:
+  trackmeet-net:
+    name: trackmeet-net
+    driver: bridge
+
+# ============================================================================
+# 启动后访问：
+#   管理端（Nginx + 前端）： http://<服务器IP>:${WEB_PORT:-80}
+#   后端接口健康检查：        http://<服务器IP>:${BACKEND_PORT:-8080}/actuator/health
+#   容器内 /api 由 Nginx 反代到 backend:8080（同源部署，浏览器无跨域）
+# 常用运维命令：
+#   docker compose logs -f backend            后端日志
+#   docker compose ps                         查看健康状态
+#   bash scripts/backup.sh --keep 30          备份数据库
+#   bash scripts/restore.sh backups/xxx.sql.gz --yes
+#   bash scripts/smoke-test.sh                冒烟验收
+# ============================================================================
